@@ -69,6 +69,21 @@ void setup() {
   client.subscribe(TOPIC);
 }
 
+void mqtt_reconnect() {
+  while (!client.connected()) {
+    String client_id = "jcores-iot-";
+    client_id += String(WiFi.macAddress());
+    Serial.printf("The client %s connects to the public MQTT broker\n", client_id.c_str());
+    if (client.connect(client_id.c_str(), MQTT_USERNAME, MQTT_PASSWORD)) {
+      Serial.println("MQTT broker connected");
+    } else {
+      Serial.print("failed with state ");
+      Serial.print(client.state());
+      delay(2000);
+    }
+  }
+}
+
 void callback(char *topic, byte *payload, unsigned int length) {
   Serial.print("Message arrived in topic: ");
   Serial.println(topic);
@@ -92,5 +107,10 @@ void callback(char *topic, byte *payload, unsigned int length) {
 }
 
 void loop() {
+  if (!client.connected()) {
+    mqtt_reconnect();
+  }
   client.loop();
+  client.publish(IOT_TOPIC, String(millis()/1000).c_str());
+}
 }
